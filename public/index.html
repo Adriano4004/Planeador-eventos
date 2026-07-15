@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Planejamento Estratégico de Eventos</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <!-- Auth screen -->
+  <div id="auth-screen" class="auth-wrap">
+    <div class="auth-card">
+      <div class="auth-brand">
+        <div class="brand-mark">PE</div>
+        <div>
+          <h1>Planejamento Estratégico</h1>
+          <p>Gestão completa de eventos com dashboard e alertas</p>
+        </div>
+      </div>
+      <div class="tabs">
+        <button class="tab active" data-tab="login">Entrar</button>
+        <button class="tab" data-tab="register">Criar conta</button>
+      </div>
+      <form id="login-form" class="auth-form">
+        <label>E-mail<input type="email" name="email" required /></label>
+        <label>Senha<input type="password" name="password" required /></label>
+        <button type="submit" class="btn primary">Entrar</button>
+        <p class="auth-err" id="login-err"></p>
+      </form>
+      <form id="register-form" class="auth-form" style="display:none">
+        <label>Nome<input type="text" name="name" required /></label>
+        <label>E-mail<input type="email" name="email" required /></label>
+        <label>Senha (mín. 6)<input type="password" name="password" minlength="6" required /></label>
+        <button type="submit" class="btn primary">Criar conta</button>
+        <p class="auth-err" id="register-err"></p>
+      </form>
+    </div>
+  </div>
+
+  <!-- App shell -->
+  <div id="app-shell" class="shell" style="display:none">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark small">PE</div>
+        <span>Planejamento</span>
+      </div>
+      <nav class="nav">
+        <button class="nav-item active" data-view="dashboard"><span class="ic">📊</span>Dashboard</button>
+        <button class="nav-item" data-view="tasks"><span class="ic">✅</span>Tarefas</button>
+        <button class="nav-item" data-view="gantt"><span class="ic">📅</span>Cronograma</button>
+        <button class="nav-item" data-view="alerts"><span class="ic">🔔</span>Alertas <span id="alerts-badge" class="badge"></span></button>
+        <button class="nav-item" data-view="settings"><span class="ic">⚙️</span>Projeto</button>
+      </nav>
+      <div class="project-picker">
+        <label>Projeto</label>
+        <select id="project-select"></select>
+        <button id="new-project-btn" class="btn ghost sm">+ Novo projeto</button>
+      </div>
+      <div class="user-box">
+        <div class="user-name" id="user-name"></div>
+        <button id="logout-btn" class="btn ghost sm">Sair</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <!-- Dashboard -->
+      <section class="view active" data-view="dashboard">
+        <header class="view-head">
+          <h2 id="dash-project-name">Dashboard</h2>
+          <div class="view-sub" id="dash-project-meta"></div>
+        </header>
+
+        <div class="kpi-grid">
+          <div class="kpi">
+            <div class="kpi-label">Progresso geral</div>
+            <div class="kpi-value" id="kpi-overall">0%</div>
+            <div class="progress"><div class="progress-bar" id="kpi-overall-bar"></div></div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Pré Produção</div>
+            <div class="kpi-value" id="kpi-pre">0%</div>
+            <div class="progress"><div class="progress-bar pre" id="kpi-pre-bar"></div></div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Produção</div>
+            <div class="kpi-value" id="kpi-prod">0%</div>
+            <div class="progress"><div class="progress-bar prod" id="kpi-prod-bar"></div></div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Pós Produção</div>
+            <div class="kpi-value" id="kpi-pos">0%</div>
+            <div class="progress"><div class="progress-bar pos" id="kpi-pos-bar"></div></div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-head">
+              <h3>Receita e público</h3>
+            </div>
+            <div class="fin-grid">
+              <div class="fin-item">
+                <div class="fin-label">Receita esperada</div>
+                <div class="fin-value" id="fin-revenue">Kz 0</div>
+              </div>
+              <div class="fin-item">
+                <div class="fin-label">Público estimado</div>
+                <div class="fin-value" id="fin-audience">0</div>
+              </div>
+              <div class="fin-item">
+                <div class="fin-label">Ticket médio</div>
+                <div class="fin-value" id="fin-ticket">Kz 0</div>
+              </div>
+              <div class="fin-item">
+                <div class="fin-label">Data do evento</div>
+                <div class="fin-value" id="fin-date">—</div>
+              </div>
+              <div class="fin-item">
+                <div class="fin-label">Dias restantes</div>
+                <div class="fin-value" id="fin-days">—</div>
+              </div>
+              <div class="fin-item">
+                <div class="fin-label">Local</div>
+                <div class="fin-value small" id="fin-location">—</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h3>Distribuição de conclusão</h3></div>
+            <div class="chart-box"><canvas id="donut-chart"></canvas></div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-head"><h3>Progresso por categoria</h3></div>
+            <div class="chart-box"><canvas id="bar-chart"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>Tarefas por responsável</h3></div>
+            <div class="chart-box"><canvas id="resp-chart"></canvas></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h3>⚠️ Alertas de execução</h3></div>
+          <div id="dash-alerts" class="alerts-list"></div>
+        </div>
+      </section>
+
+      <!-- Tasks -->
+      <section class="view" data-view="tasks">
+        <header class="view-head">
+          <h2>Tarefas</h2>
+          <div class="filters">
+            <input type="text" id="task-search" placeholder="Buscar tarefas..." />
+            <select id="filter-phase">
+              <option value="">Todas as fases</option>
+              <option value="PRÉ">Pré Produção</option>
+              <option value="PRODUÇÃO">Produção</option>
+              <option value="PÓS">Pós Produção</option>
+            </select>
+            <select id="filter-status">
+              <option value="">Todos</option>
+              <option value="pending">Pendentes</option>
+              <option value="done">Concluídos</option>
+              <option value="late">Atrasadas</option>
+            </select>
+            <button id="add-task-btn" class="btn primary">+ Nova tarefa</button>
+          </div>
+        </header>
+        <div id="tasks-list" class="tasks-list"></div>
+      </section>
+
+      <!-- Gantt -->
+      <section class="view" data-view="gantt">
+        <header class="view-head">
+          <h2>Cronograma (Gantt semanal)</h2>
+          <div class="view-sub">Visualização das tarefas com data no calendário do projeto.</div>
+        </header>
+        <div class="card">
+          <div id="gantt-wrap" class="gantt-wrap"></div>
+        </div>
+      </section>
+
+      <!-- Alerts -->
+      <section class="view" data-view="alerts">
+        <header class="view-head">
+          <h2>Alertas de execução</h2>
+          <div class="view-sub">Tarefas que precisam da sua atenção agora.</div>
+        </header>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-head"><h3>🚨 Atrasadas</h3></div>
+            <div id="alerts-late" class="alerts-list"></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>⏰ Próximos 7 dias</h3></div>
+            <div id="alerts-soon" class="alerts-list"></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>❓ Sem data</h3></div>
+            <div id="alerts-nodate" class="alerts-list"></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>👤 Sem responsável</h3></div>
+            <div id="alerts-noowner" class="alerts-list"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Settings -->
+      <section class="view" data-view="settings">
+        <header class="view-head">
+          <h2>Ficha técnica do projeto</h2>
+        </header>
+        <div class="card">
+          <form id="project-form" class="form-grid">
+            <label>Nome do evento<input type="text" name="name" required /></label>
+            <label>Data do evento<input type="date" name="event_date" /></label>
+            <label>Início do planejamento<input type="date" name="start_date" /></label>
+            <label>Local<input type="text" name="location" /></label>
+            <label>Público estimado<input type="number" name="audience" min="0" /></label>
+            <label>Ticket médio (Kz)<input type="number" name="ticket_price" step="0.01" min="0" /></label>
+            <label>Receita esperada (Kz)<input type="number" name="expected_revenue" step="0.01" min="0" /></label>
+            <div class="form-actions">
+              <button type="submit" class="btn primary">Salvar</button>
+              <button type="button" id="delete-project-btn" class="btn danger">Excluir projeto</button>
+            </div>
+          </form>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Task modal -->
+  <div id="task-modal" class="modal" style="display:none">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h3 id="task-modal-title">Nova tarefa</h3>
+        <button class="modal-close">×</button>
+      </div>
+      <form id="task-form" class="form-grid">
+        <label class="col-2">Título<input type="text" name="title" required /></label>
+        <label>Fase
+          <select name="phase">
+            <option value="PRÉ">Pré Produção</option>
+            <option value="PRODUÇÃO">Produção</option>
+            <option value="PÓS">Pós Produção</option>
+          </select>
+        </label>
+        <label>Categoria<input type="text" name="category" /></label>
+        <label>Responsável<input type="text" name="responsible" /></label>
+        <label>&nbsp;<div><label class="check"><input type="checkbox" name="done" /> Concluída</label></div></label>
+        <label>Início<input type="date" name="start_date" /></label>
+        <label>Fim<input type="date" name="end_date" /></label>
+        <div class="form-actions col-2">
+          <button type="submit" class="btn primary">Salvar</button>
+          <button type="button" class="btn ghost modal-close">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- New project modal -->
+  <div id="project-modal" class="modal" style="display:none">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h3>Novo projeto</h3>
+        <button class="modal-close">×</button>
+      </div>
+      <form id="new-project-form" class="form-grid">
+        <label class="col-2">Nome do evento<input type="text" name="name" required /></label>
+        <label>Data do evento<input type="date" name="event_date" /></label>
+        <label>Início do planejamento<input type="date" name="start_date" /></label>
+        <label>Local<input type="text" name="location" /></label>
+        <label>Público estimado<input type="number" name="audience" min="0" /></label>
+        <label>Ticket médio (Kz)<input type="number" name="ticket_price" step="0.01" min="0" /></label>
+        <label>Receita esperada (Kz)<input type="number" name="expected_revenue" step="0.01" min="0" /></label>
+        <label class="col-2"><label class="check"><input type="checkbox" name="seed" checked /> Preencher com o template padrão (77 tarefas)</label></label>
+        <div class="form-actions col-2">
+          <button type="submit" class="btn primary">Criar</button>
+          <button type="button" class="btn ghost modal-close">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" style="display:none"></div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
