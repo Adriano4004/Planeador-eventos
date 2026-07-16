@@ -6,6 +6,8 @@
   <title>Planejamento Estratégico de Eventos</title>
   <link rel="stylesheet" href="/styles.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
   <!-- Auth screen -->
@@ -23,17 +25,32 @@
         <button class="tab" data-tab="register">Criar conta</button>
       </div>
       <form id="login-form" class="auth-form">
-        <label>E-mail<input type="email" name="email" required /></label>
-        <label>Senha<input type="password" name="password" required /></label>
+        <label>E-mail<input type="email" name="email" required autocomplete="email" /></label>
+        <label>Senha<input type="password" name="password" required autocomplete="current-password" /></label>
         <button type="submit" class="btn primary">Entrar</button>
         <p class="auth-err" id="login-err"></p>
+        <p style="text-align:center;margin:8px 0 0;font-size:12px"><a href="#" id="forgot-link" style="color:var(--accent)">Esqueci a senha</a></p>
       </form>
       <form id="register-form" class="auth-form" style="display:none">
-        <label>Nome<input type="text" name="name" required /></label>
-        <label>E-mail<input type="email" name="email" required /></label>
-        <label>Senha (mín. 6)<input type="password" name="password" minlength="6" required /></label>
+        <label>Nome<input type="text" name="name" required maxlength="120" autocomplete="name" /></label>
+        <label>E-mail<input type="email" name="email" required autocomplete="email" /></label>
+        <label>Senha (mín. 8, com letras e números)<input type="password" name="password" minlength="8" maxlength="128" required autocomplete="new-password" /></label>
         <button type="submit" class="btn primary">Criar conta</button>
         <p class="auth-err" id="register-err"></p>
+        <p style="color:var(--muted);font-size:11px;margin-top:4px">Ao criar a conta, aceita os Termos de Uso e a Política de Privacidade.</p>
+      </form>
+      <form id="forgot-form" class="auth-form" style="display:none">
+        <p style="color:var(--muted);font-size:13px;margin:0 0 8px">Enviaremos um link de recuperação para o seu e-mail.</p>
+        <label>E-mail<input type="email" name="email" required autocomplete="email" /></label>
+        <button type="submit" class="btn primary">Enviar link</button>
+        <p class="auth-err" id="forgot-err"></p>
+        <p style="text-align:center;margin:4px 0 0;font-size:12px"><a href="#" id="back-login" style="color:var(--accent)">Voltar</a></p>
+      </form>
+      <form id="reset-form" class="auth-form" style="display:none">
+        <p style="color:var(--muted);font-size:13px;margin:0 0 8px">Defina uma nova senha.</p>
+        <label>Nova senha (mín. 8, com letras e números)<input type="password" name="password" minlength="8" maxlength="128" required autocomplete="new-password" /></label>
+        <button type="submit" class="btn primary">Redefinir senha</button>
+        <p class="auth-err" id="reset-err"></p>
       </form>
     </div>
   </div>
@@ -49,6 +66,10 @@
         <button class="nav-item active" data-view="dashboard"><span class="ic">📊</span>Dashboard</button>
         <button class="nav-item" data-view="tasks"><span class="ic">✅</span>Tarefas</button>
         <button class="nav-item" data-view="gantt"><span class="ic">📅</span>Cronograma</button>
+        <button class="nav-item" data-view="budget"><span class="ic">💰</span>Orçamento</button>
+        <button class="nav-item" data-view="suppliers"><span class="ic">🤝</span>Fornecedores</button>
+        <button class="nav-item" data-view="guests"><span class="ic">👥</span>Convidados</button>
+        <button class="nav-item" data-view="reports"><span class="ic">📄</span>Relatórios</button>
         <button class="nav-item" data-view="alerts"><span class="ic">🔔</span>Alertas <span id="alerts-badge" class="badge"></span></button>
         <button class="nav-item" data-view="settings"><span class="ic">⚙️</span>Projeto</button>
       </nav>
@@ -60,6 +81,9 @@
       <div class="user-box">
         <div class="user-name" id="user-name"></div>
         <button id="logout-btn" class="btn ghost sm">Sair</button>
+      </div>
+      <div id="email-verify-banner" style="display:none;background:#f59e0b22;border:1px solid #f59e0b;color:#f59e0b;padding:8px 10px;border-radius:8px;font-size:11px;margin-top:8px">
+        E-mail não verificado. <a href="#" id="resend-verify" style="color:#f59e0b;text-decoration:underline">Reenviar</a>
       </div>
     </aside>
 
@@ -211,6 +235,137 @@
         </div>
       </section>
 
+      <!-- Budget -->
+      <section class="view" data-view="budget">
+        <header class="view-head">
+          <h2>Orçamento — Previsto vs Real</h2>
+          <div class="filters">
+            <button id="add-budget-btn" class="btn primary">+ Novo item</button>
+          </div>
+        </header>
+        <div class="kpi-grid">
+          <div class="kpi"><div class="kpi-label">Total previsto</div><div class="kpi-value" id="bkpi-planned">Kz 0</div></div>
+          <div class="kpi"><div class="kpi-label">Total realizado</div><div class="kpi-value" id="bkpi-actual">Kz 0</div></div>
+          <div class="kpi"><div class="kpi-label">Diferença</div><div class="kpi-value" id="bkpi-diff">Kz 0</div></div>
+          <div class="kpi"><div class="kpi-label">Realizado / Previsto</div><div class="kpi-value" id="bkpi-ratio">—</div><div class="progress"><div class="progress-bar" id="bkpi-ratio-bar"></div></div></div>
+        </div>
+        <div class="grid-2">
+          <div class="card"><div class="card-head"><h3>Distribuição por categoria</h3></div><div class="chart-box"><canvas id="budget-chart"></canvas></div></div>
+          <div class="card"><div class="card-head"><h3>Ponto de equilíbrio</h3></div>
+            <div class="fin-grid">
+              <div class="fin-item"><div class="fin-label">Receita esperada</div><div class="fin-value" id="be-revenue">Kz 0</div></div>
+              <div class="fin-item"><div class="fin-label">Gastos previstos</div><div class="fin-value" id="be-planned">Kz 0</div></div>
+              <div class="fin-item"><div class="fin-label">Lucro estimado</div><div class="fin-value" id="be-profit">Kz 0</div></div>
+              <div class="fin-item"><div class="fin-label">Pessoas p/ "empatar"</div><div class="fin-value" id="be-people">—</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>Itens do orçamento</h3></div>
+          <div class="table-wrap"><table class="tbl" id="budget-table">
+            <thead><tr><th>Categoria</th><th>Descrição</th><th>Fornecedor</th><th class="num">Unit.</th><th class="num">Qt.</th><th class="num">Previsto</th><th class="num">Real</th><th class="num">Δ</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table></div>
+        </div>
+      </section>
+
+      <!-- Suppliers -->
+      <section class="view" data-view="suppliers">
+        <header class="view-head">
+          <h2>Fornecedores (mini CRM)</h2>
+          <div class="filters">
+            <input type="text" id="sup-search" placeholder="Buscar fornecedor..." />
+            <select id="sup-filter-status">
+              <option value="">Todos os estados</option>
+              <option value="novo">Novo</option>
+              <option value="contactado">Contactado</option>
+              <option value="cotado">Cotado</option>
+              <option value="contratado">Contratado</option>
+              <option value="pago">Pago</option>
+              <option value="descartado">Descartado</option>
+            </select>
+            <button id="add-sup-btn" class="btn primary">+ Novo fornecedor</button>
+          </div>
+        </header>
+        <div class="card">
+          <div class="table-wrap"><table class="tbl" id="sup-table">
+            <thead><tr><th>Nome</th><th>Categoria</th><th>Contacto</th><th>E-mail / Telefone</th><th>Cidade</th><th>Avaliação</th><th>Estado</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table></div>
+        </div>
+        <p style="color:var(--muted);font-size:12px;margin-top:8px">💡 No futuro este módulo evoluirá para um marketplace onde clientes podem encontrar e contratar fornecedores diretamente.</p>
+      </section>
+
+      <!-- Guests -->
+      <section class="view" data-view="guests">
+        <header class="view-head">
+          <h2>Convidados e confirmações</h2>
+          <div class="filters">
+            <input type="text" id="guest-search" placeholder="Buscar..." />
+            <select id="guest-filter-status">
+              <option value="">Todos</option>
+              <option value="pendente">Pendentes</option>
+              <option value="confirmado">Confirmados</option>
+              <option value="recusado">Recusados</option>
+            </select>
+            <button id="rsvp-link-btn" class="btn ghost">🔗 Link público</button>
+            <button id="add-guest-btn" class="btn primary">+ Novo convidado</button>
+          </div>
+        </header>
+        <div class="kpi-grid">
+          <div class="kpi"><div class="kpi-label">Total</div><div class="kpi-value" id="gkpi-total">0</div></div>
+          <div class="kpi"><div class="kpi-label">Confirmados (c/ acompanhantes)</div><div class="kpi-value" id="gkpi-conf">0</div></div>
+          <div class="kpi"><div class="kpi-label">Pendentes</div><div class="kpi-value" id="gkpi-pend">0</div></div>
+          <div class="kpi"><div class="kpi-label">Recusados</div><div class="kpi-value" id="gkpi-rec">0</div></div>
+        </div>
+        <div class="card">
+          <div class="table-wrap"><table class="tbl" id="guests-table">
+            <thead><tr><th>Nome</th><th>Categoria</th><th>Contacto</th><th>Mesa</th><th class="num">+</th><th>Estado</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table></div>
+        </div>
+      </section>
+
+      <!-- Reports -->
+      <section class="view" data-view="reports">
+        <header class="view-head">
+          <h2>Relatórios em PDF</h2>
+          <div class="view-sub">Documento com a sua marca para o cliente e versão completa para o gestor.</div>
+        </header>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-head"><h3>📄 Relatório para o cliente</h3></div>
+            <p style="color:var(--muted);font-size:13px">Resumo executivo com progresso, orçamento previsto vs real e convidados. Marca da sua empresa no cabeçalho.</p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+              <button class="btn primary" data-report="client">⬇ Gerar PDF do cliente</button>
+              <button class="btn ghost" data-report="preview-client">👁 Pré-visualizar</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>🗂 Backup do gestor</h3></div>
+            <p style="color:var(--muted);font-size:13px">Documento completo com tudo: tarefas, itens de orçamento, lista completa de convidados, fornecedores e observações.</p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+              <button class="btn primary" data-report="manager">⬇ Gerar PDF do gestor</button>
+              <button class="btn ghost" data-report="preview-manager">👁 Pré-visualizar</button>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:14px">
+          <div class="card-head"><h3>🎨 Identidade da empresa (usada no PDF)</h3></div>
+          <form id="brand-form" class="form-grid">
+            <label>Nome da empresa<input type="text" name="company_name" maxlength="160" /></label>
+            <label>Cor da marca<input type="color" name="brand_color" value="#6c8cff" /></label>
+            <label>E-mail da empresa<input type="email" name="company_email" maxlength="190" /></label>
+            <label>Telefone da empresa<input type="text" name="company_phone" maxlength="60" /></label>
+            <div class="form-actions col-2"><button type="submit" class="btn primary">Salvar identidade</button></div>
+          </form>
+        </div>
+        <div id="report-preview" class="card" style="margin-top:14px;display:none">
+          <div class="card-head"><h3>Pré-visualização</h3><button class="btn ghost sm" id="close-preview">Fechar</button></div>
+          <div id="report-preview-body"></div>
+        </div>
+      </section>
+
       <!-- Settings -->
       <section class="view" data-view="settings">
         <header class="view-head">
@@ -230,6 +385,14 @@
               <button type="button" id="delete-project-btn" class="btn danger">Excluir projeto</button>
             </div>
           </form>
+        </div>
+        <div class="card" style="margin-top:14px">
+          <div class="card-head"><h3>Privacidade e conta</h3></div>
+          <p style="color:var(--muted);font-size:13px">Você tem direito a exportar ou eliminar os seus dados a qualquer momento (Lei Angolana nº 22/11 de Proteção de Dados).</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+            <button type="button" id="export-account-btn" class="btn">⬇ Exportar meus dados (JSON)</button>
+            <button type="button" id="delete-account-btn" class="btn danger">Eliminar minha conta</button>
+          </div>
         </div>
       </section>
     </main>
@@ -253,7 +416,7 @@
         </label>
         <label>Categoria<input type="text" name="category" /></label>
         <label>Responsável<input type="text" name="responsible" /></label>
-        <label>&nbsp;<div><label class="check"><input type="checkbox" name="done" /> Concluída</label></div></label>
+        <div><label class="check"><input type="checkbox" name="done" /> Concluída</label></div>
         <label>Início<input type="date" name="start_date" /></label>
         <label>Fim<input type="date" name="end_date" /></label>
         <div class="form-actions col-2">
@@ -279,12 +442,100 @@
         <label>Público estimado<input type="number" name="audience" min="0" /></label>
         <label>Ticket médio (Kz)<input type="number" name="ticket_price" step="0.01" min="0" /></label>
         <label>Receita esperada (Kz)<input type="number" name="expected_revenue" step="0.01" min="0" /></label>
-        <label class="col-2"><label class="check"><input type="checkbox" name="seed" checked /> Preencher com o template padrão (77 tarefas)</label></label>
+        <div class="col-2"><label class="check"><input type="checkbox" name="seed" checked /> Preencher com o template padrão (77 tarefas)</label></div>
         <div class="form-actions col-2">
           <button type="submit" class="btn primary">Criar</button>
           <button type="button" class="btn ghost modal-close">Cancelar</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Budget item modal -->
+  <div id="budget-modal" class="modal" style="display:none">
+    <div class="modal-card">
+      <div class="modal-head"><h3 id="budget-modal-title">Novo item de orçamento</h3><button class="modal-close">×</button></div>
+      <form id="budget-form" class="form-grid">
+        <label>Categoria
+          <select name="category" required>
+            <option>Local</option><option>Divulgação</option><option>Decoração/Iluminação</option>
+            <option>Equipamentos</option><option>Alimentação/Hospedagem</option><option>Equipe de trabalho</option>
+            <option>Artístico</option><option>Segurança</option><option>Transporte</option><option>Outros</option>
+          </select>
+        </label>
+        <label>Fornecedor <select name="supplier_id"><option value="">—</option></select></label>
+        <label class="col-2">Descrição<input type="text" name="description" required maxlength="300" /></label>
+        <label>Valor unitário (Kz)<input type="number" name="unit_price" step="0.01" min="0" value="0" /></label>
+        <label>Quantidade<input type="number" name="quantity" step="0.01" min="0" value="1" /></label>
+        <label>Valor previsto (Kz)<input type="number" name="planned" step="0.01" min="0" placeholder="auto (unit × qt)" /></label>
+        <label>Valor real (Kz)<input type="number" name="actual" step="0.01" min="0" value="0" /></label>
+        <div class="form-actions col-2">
+          <button type="submit" class="btn primary">Salvar</button>
+          <button type="button" class="btn ghost modal-close">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Supplier modal -->
+  <div id="sup-modal" class="modal" style="display:none">
+    <div class="modal-card">
+      <div class="modal-head"><h3 id="sup-modal-title">Novo fornecedor</h3><button class="modal-close">×</button></div>
+      <form id="sup-form" class="form-grid">
+        <label class="col-2">Nome / Empresa<input type="text" name="name" required maxlength="200" /></label>
+        <label>Categoria<input type="text" name="category" maxlength="120" placeholder="ex: Catering, DJ, Decoração" /></label>
+        <label>Estado
+          <select name="status">
+            <option value="novo">Novo</option><option value="contactado">Contactado</option>
+            <option value="cotado">Cotado</option><option value="contratado">Contratado</option>
+            <option value="pago">Pago</option><option value="descartado">Descartado</option>
+          </select>
+        </label>
+        <label>Nome do contacto<input type="text" name="contact_name" maxlength="120" /></label>
+        <label>Cidade<input type="text" name="city" maxlength="120" /></label>
+        <label>E-mail<input type="email" name="email" maxlength="190" /></label>
+        <label>Telefone<input type="text" name="phone" maxlength="60" /></label>
+        <label>Avaliação (0–5)<input type="number" name="rating" min="0" max="5" step="1" /></label>
+        <label>Vincular a projeto <select name="project_id"><option value="">Todos os projetos</option></select></label>
+        <label class="col-2">Observações<textarea name="notes" rows="3" maxlength="2000"></textarea></label>
+        <div class="form-actions col-2"><button type="submit" class="btn primary">Salvar</button><button type="button" class="btn ghost modal-close">Cancelar</button></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Guest modal -->
+  <div id="guest-modal" class="modal" style="display:none">
+    <div class="modal-card">
+      <div class="modal-head"><h3 id="guest-modal-title">Novo convidado</h3><button class="modal-close">×</button></div>
+      <form id="guest-form" class="form-grid">
+        <label class="col-2">Nome<input type="text" name="name" required maxlength="200" /></label>
+        <label>E-mail<input type="email" name="email" maxlength="190" /></label>
+        <label>Telefone<input type="text" name="phone" maxlength="60" /></label>
+        <label>Categoria<input type="text" name="category" maxlength="120" placeholder="ex: Família, VIP, Imprensa" /></label>
+        <label>Mesa<input type="text" name="table_no" maxlength="30" /></label>
+        <label>Acompanhantes<input type="number" name="companions" min="0" max="50" value="0" /></label>
+        <label>Estado
+          <select name="rsvp_status">
+            <option value="pendente">Pendente</option>
+            <option value="confirmado">Confirmado</option>
+            <option value="recusado">Recusado</option>
+          </select>
+        </label>
+        <label class="col-2">Observações<input type="text" name="notes" maxlength="500" /></label>
+        <div class="form-actions col-2"><button type="submit" class="btn primary">Salvar</button><button type="button" class="btn ghost modal-close">Cancelar</button></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- RSVP link modal -->
+  <div id="rsvp-link-modal" class="modal" style="display:none">
+    <div class="modal-card">
+      <div class="modal-head"><h3>Link público de RSVP</h3><button class="modal-close">×</button></div>
+      <p style="color:var(--muted);font-size:13px">Partilhe este link para que os convidados possam confirmar presença directamente (sem precisarem de conta).</p>
+      <div style="display:flex;gap:6px;align-items:center;margin-top:8px">
+        <input type="text" id="rsvp-link-input" readonly style="flex:1" />
+        <button class="btn" id="rsvp-copy-btn">Copiar</button>
+      </div>
     </div>
   </div>
 
