@@ -278,3 +278,38 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); }
 .toast.ok { border-color: var(--ok); }
 .toast.err { border-color: var(--danger); }
 @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+/* ---------- TABLES ---------- */
+.table-wrap { overflow-x: auto; }
+.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+.tbl th, .tbl td { padding: 10px 8px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+.tbl th { color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; background: rgba(255,255,255,0.02); }
+.tbl td.num, .tbl th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.tbl tr:hover td { background: rgba(255,255,255,0.02); }
+.tbl input, .tbl select { background: transparent; border: 1px solid transparent; color: var(--text); padding: 4px 6px; border-radius: 6px; width: 100%; font-size: 13px; }
+.tbl input:focus, .tbl select:focus { border-color: var(--accent); outline: none; background: var(--panel-2); }
+.tbl .row-actions { display: flex; gap: 4px; justify-content: flex-end; }
+.pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+.pill.novo { background: #6c8cff22; color: #6c8cff; }
+.pill.contactado { background: #f59e0b22; color: #f59e0b; }
+.pill.cotado { background: #a78bfa22; color: #a78bfa; }
+.pill.contratado { background: #10b98122; color: #10b981; }
+.pill.pago { background: #10b98155; color: #10b981; }
+.pill.descartado { background: #ef444422; color: #ef4444; }
+.pill.pendente { background: #6c8cff22; color: #6c8cff; }
+.pill.confirmado { background: #10b98122; color: #10b981; }
+.pill.recusado { background: #ef444422; color: #ef4444; }
+.delta.pos { color: #ef4444; }
+.delta.neg { color: #10b981; }
+.delta.eq { color: var(--muted); }
+
+/* ---------- REPORT PREVIEW ---------- */
+.report-preview { background: white; color: #111; padding: 28px; border-radius: 8px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.report-preview h1, .report-preview h2, .report-preview h3 { color: #111; margin: 12px 0; }
+.report-preview table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 12px; }
+.report-preview th, .report-preview td { border: 1px solid #ddd; padding: 6px 8px; text-align: left; }
+.report-preview th { background: #f5f5f7; }
+.report-preview .brand-bar { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 3px solid var(--rp-color, #6c8cff); margin-bottom: 20px; }
+.report-preview .brand-mark { width: 48px; height: 48px; border-radius: 10px; background: var(--rp-color, #6c8cff); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 20px; }
+.report-preview .brand-name { font-size: 18px; font-weight: 700; }
+.report-preview .brand-sub { font-size: 12px; color: #555; }
