@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt-AO">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Confirmação de presença</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    body { display:flex; align-items:center; justify-content:center; min-height:100vh; padding:20px; }
+    .rsvp-card { max-width:520px; width:100%; background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:28px; box-shadow:var(--shadow); }
+    .rsvp-card h1 { margin:0 0 6px; }
+    .rsvp-card .event-meta { color:var(--muted); font-size:14px; margin-bottom:20px; }
+    .rsvp-card form { display:flex; flex-direction:column; gap:12px; }
+    .rsvp-card label { display:flex; flex-direction:column; gap:4px; font-size:12px; color:var(--muted); }
+    .rsvp-card input, .rsvp-card select { padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--panel-2); color:var(--text); font-size:14px; }
+    .rsvp-msg { padding:14px; border-radius:10px; margin-top:12px; }
+    .rsvp-msg.ok { background:#10b98122; border:1px solid #10b981; color:#10b981; }
+    .rsvp-msg.err { background:#ef444422; border:1px solid #ef4444; color:#ef4444; }
+  </style>
+</head>
+<body>
+  <div class="rsvp-card">
+    <h1 id="event-name">Confirmação de presença</h1>
+    <div class="event-meta" id="event-meta">A carregar…</div>
+    <form id="rsvp-form">
+      <label>Seu nome completo<input type="text" name="name" required maxlength="200" /></label>
+      <label>E-mail (opcional)<input type="email" name="email" maxlength="190" /></label>
+      <label>Telefone (opcional)<input type="text" name="phone" maxlength="60" /></label>
+      <label>Acompanhantes<input type="number" name="companions" min="0" max="20" value="0" /></label>
+      <label>Sua resposta
+        <select name="rsvp_status" required>
+          <option value="confirmado">✅ Vou comparecer</option>
+          <option value="recusado">❌ Não poderei comparecer</option>
+        </select>
+      </label>
+      <button type="submit" class="btn primary">Enviar resposta</button>
+    </form>
+    <div id="rsvp-msg"></div>
+  </div>
+  <script>
+    const token = location.pathname.split('/').pop();
+    function getCookie(n){ const m=document.cookie.match(new RegExp('(^|; )'+n+'=([^;]*)')); return m?decodeURIComponent(m[2]):''; }
+    async function load() {
+      // prime csrf cookie
+      await fetch('/api/rsvp/' + token).then(r => r.json()).then(d => {
+        if (d.error) { document.getElementById('event-meta').textContent = 'Link inválido ou expirado.'; document.getElementById('rsvp-form').style.display = 'none'; return; }
+        document.getElementById('event-name').textContent = d.project.name;
+        const parts = [];
+        if (d.project.event_date) parts.push('📅 ' + new Date(d.project.event_date).toLocaleDateString('pt-AO'));
+        if (d.project.location) parts.push('📍 ' + d.project.location);
+        document.getElementById('event-meta').textContent = parts.join(' · ') || 'Confirme a sua presença abaixo.';
+      });
+    }
+    load();
+    document.getElementById('rsvp-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const body = Object.fromEntries(new FormData(e.target));
+      const csrf = getCookie('csrf');
+      const r = await fetch('/api/rsvp/' + token, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-csrf-token': csrf },
+        credentials: 'include',
+        body: JSON.stringify(body),
+      });
+      const msg = document.getElementById('rsvp-msg');
+      if (r.ok) {
+        msg.className = 'rsvp-msg ok'; msg.textContent = 'Obrigado! A sua resposta foi registada.';
+        e.target.style.display = 'none';
+      } else {
+        const d = await r.json().catch(() => ({}));
+        msg.className = 'rsvp-msg err'; msg.textContent = d.error || 'Erro ao enviar. Tente de novo.';
+      }
+    });
+  </script>
+</body>
+</html>
