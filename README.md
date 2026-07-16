@@ -1,52 +1,61 @@
-# Planejamento Estratégico de Eventos
+# Planejamento Estratégico de Eventos — v1.2 (Secure + CRM + Budget + PDF)
 
-Aplicação web completa para planejamento de eventos: multi-usuário com login, banco de dados MySQL, dashboard com KPIs, cronograma (Gantt), tarefas e alertas.
+SaaS de planeamento de eventos com login, banco de dados MySQL, dashboard, alertas, Gantt, orçamento previsto vs real, mini CRM de fornecedores, gestão de convidados com RSVP público e relatórios em PDF com marca.
 
-## Recursos
+## Variáveis de ambiente (Railway → Variables)
 
-- Autenticação com e-mail/senha (bcrypt + JWT em cookie httpOnly)
-- Múltiplos projetos por usuário, template padrão com 77 tarefas
-- Dashboard com progresso por fase, gráficos (Chart.js), financeiro
-- Tarefas com filtros, categorias, responsáveis, datas
-- Cronograma Gantt semanal
-- Alertas: atrasadas, próximos 7 dias, sem data, sem responsável
+Obrigatórias:
+- `DATABASE_URL` — referência ao MySQL (ex: `${{ MySQL.MYSQL_URL }}`)
+- `JWT_SECRET` — string aleatória com **mínimo 32 caracteres** (o app falha ao iniciar se for menor)
 
-## Stack
+Recomendadas em produção:
+- `NODE_ENV` = `production`
+- `PUBLIC_URL` = URL pública do teu app (ex: `https://planejador.up.railway.app`) — necessária para os links de recuperação de senha e verificação de e-mail funcionarem
+- `EMAIL_FROM` = `noreply@teudominio.com`
 
-- Node.js + Express
-- MySQL / TiDB (via `mysql2/promise`)
-- Frontend puro (HTML, CSS, JS + Chart.js CDN)
+SMTP (para enviar e-mails de recuperação/verificação):
+- `SMTP_HOST` — ex: `smtp.resend.com` ou `smtp.gmail.com`
+- `SMTP_PORT` — ex: `587`
+- `SMTP_SECURE` — `true` ou `false`
+- `SMTP_USER` — utilizador SMTP
+- `SMTP_PASS` — senha/API key SMTP
 
-## Rodando localmente
+Sem SMTP configurado o app continua a funcionar, mas os e-mails são apenas logados na consola.
 
-```bash
-npm install
-export DATABASE_URL="mysql://user:pass@host:3306/dbname"
-export JWT_SECRET="uma-string-longa-e-aleatoria"
-node server.js
-```
+## Melhorias de segurança da v1.1
 
-Abre em http://localhost:3000
+- ✅ Rate limiting no login (10/15min), registo (5/h), recuperação (5/h), API geral (120/min)
+- ✅ Bloqueio automático da conta após 5 falhas de login (15 min)
+- ✅ Senhas fortes obrigatórias (mín. 8, letras+números)
+- ✅ bcrypt com 12 rounds
+- ✅ JWT_SECRET validado (32+ chars obrigatório)
+- ✅ Cookies com `Secure` + `SameSite=Strict` em produção
+- ✅ CSRF protection (double-submit token)
+- ✅ Content Security Policy + Helmet (headers de segurança)
+- ✅ Verificação de e-mail com token expirável
+- ✅ Recuperação de senha por e-mail
+- ✅ Logs de auditoria (registo, login, falhas, alterações sensíveis)
+- ✅ Limites de recursos (50 projetos/utilizador, 500 tarefas/projeto)
+- ✅ Endpoint de exportação de dados (direito à portabilidade — LGPD Angola)
+- ✅ Endpoint de eliminação de conta (direito ao esquecimento)
+- ✅ Validação estrita de inputs com truncagem
+- ✅ Endpoint `/health` para monitorização de uptime
 
-O banco é migrado automaticamente na primeira execução (cria as tabelas `users`, `projects` e `tasks`).
+## Novidades da v1.2
 
-## Publicar
-
-Compatível com qualquer host que suporte Node.js + MySQL:
-- Railway
-- Render
-- Fly.io
-- VPS (Ubuntu + Node + MySQL/MariaDB)
-
-Basta expor a variável `DATABASE_URL` e o app conecta.
+- 💰 **Orçamento previsto vs real** — categorias, itens com fornecedor vinculado, cálculo automático de diferenças, ponto de equilíbrio
+- 🤝 **Fornecedores (mini CRM)** — funil (novo → contactado → cotado → contratado → pago), avaliação, contactos, notas
+- 👥 **Convidados e RSVP** — lista com estados, acompanhantes, mesas + **link público** que permite a convidados confirmarem sem terem conta
+- 📄 **Relatórios PDF** — versão executiva para o cliente com a marca da empresa + versão completa "backup do gestor" com todos os detalhes
+- 🎨 **Identidade da empresa** — nome, cor da marca, contactos aparecem no cabeçalho dos PDFs
 
 ## Estrutura
 
 ```
-package.json          # deps: express, mysql2, bcryptjs, jsonwebtoken, cookie-parser
-server.js             # API + migração + auth
+package.json          # dependências
+server.js             # API + segurança + auth
 public/
   index.html          # UI
-  styles.css          # tema escuro
-  app.js              # lógica cliente
+  styles.css          # tema
+  app.js              # cliente
 ```
