@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Confirmar presença — Eveni</title>
+  <link rel="icon" type="image/png" href="/eveni-logo.png">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<section class="rsvp-view">
+  <div class="rsvp-card">
+    <img src="/eveni-logo.png" alt="Eveni" style="width:48px;height:48px;object-fit:contain;margin-bottom:8px">
+    <h1 id="rsvp-title">Confirmar presença</h1>
+    <p class="muted" id="rsvp-subtitle">A carregar…</p>
+
+    <div id="rsvp-content" class="hidden">
+      <div class="rsvp-event">
+        <strong id="rsvp-project">—</strong>
+        <p class="muted small" id="rsvp-details">—</p>
+      </div>
+
+      <p>Olá <strong id="rsvp-name">—</strong>, poderá comparecer?</p>
+
+      <div class="rsvp-options">
+        <button class="btn" data-status="sim">Sim, vou</button>
+        <button class="btn" data-status="talvez">Talvez</button>
+        <button class="btn" data-status="nao">Não posso</button>
+      </div>
+
+      <label style="display:block;margin-top:8px">
+        Quantas pessoas (incluindo si)?
+        <input type="number" id="rsvp-party" min="1" value="1">
+      </label>
+
+      <button class="btn btn-primary" id="rsvp-submit" style="width:100%;margin-top:16px">Enviar resposta</button>
+      <p class="form-error" id="rsvp-error"></p>
+    </div>
+
+    <div id="rsvp-done" class="hidden">
+      <p style="font-size:16px;margin-top:12px">Obrigado! A sua resposta foi registada.</p>
+      <p class="muted small">Pode fechar esta janela.</p>
+    </div>
+  </div>
+</section>
+<script src="/rsvp.js"></script>
+</body>
+</html>
