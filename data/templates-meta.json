@@ -1,0 +1,30 @@
+{
+  "T01": {
+    "code": "T01",
+    "name": "Conferência de Imprensa",
+    "days_recommended": 21,
+    "description": "Anúncio corporativo, lançamento ou resposta a crise. Horizonte curto (21 dias).",
+    "audience": "Media, imprensa, stakeholders"
+  },
+  "T02": {
+    "code": "T02",
+    "name": "Casamento",
+    "days_recommended": 365,
+    "description": "Cerimónia e festa. Horizonte típico de 12 meses.",
+    "audience": "Convidados privados"
+  },
+  "T03": {
+    "code": "T03",
+    "name": "Congresso",
+    "days_recommended": 180,
+    "description": "Instituição, associação, universidade ou empresa. Horizonte de 6 meses.",
+    "audience": "Profissionais, académicos"
+  },
+  "T04": {
+    "code": "T04",
+    "name": "Festival / Concerto",
+    "days_recommended": 240,
+    "description": "Festival ou concerto com bilheteira. Horizonte de 8 meses.",
+    "audience": "Público geral"
+  }
+}
